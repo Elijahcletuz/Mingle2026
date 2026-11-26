@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mingle Get-Together 2026 | Personalise Your Poster</title>
+<style>
+  :root { color-scheme: dark; --purple:#a800f5; --pink:#f05bdc; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; color:#fff; background: radial-gradient(ellipse at 50% 0%, #45106e 0, #170020 58%, #0d0015 100%); }
+  .shell { width:min(1120px, 100%); margin:0 auto; padding:34px 22px 56px; }
+  header { text-align:center; margin-bottom:26px; }
+  .eyebrow { color:#f1a3ff; font-size:12px; letter-spacing:.22em; text-transform:uppercase; font-weight:800; }
+  h1 { margin:9px 0 8px; font-size:clamp(27px,4vw,42px); line-height:1.05; }
+  header p { margin:0; color:#d9c9e3; font-size:15px; }
+  .layout { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(290px,.85fr); gap:26px; align-items:start; }
+  .preview-card,.panel { border:1px solid #71308d; background:rgba(29,5,42,.78); border-radius:22px; box-shadow:0 18px 60px #0007, 0 0 30px #9c00ff22; }
+  .preview-card { padding:14px; }
+  .preview-wrap { overflow:hidden; border-radius:14px; background:#16001f; }
+  canvas { display:block; width:100%; height:auto; }
+  .preview-note { color:#cbb8d6; text-align:center; font-size:12px; padding:12px 5px 2px; }
+  .panel { padding:24px; }
+  .panel h2 { margin:0 0 7px; font-size:21px; }
+  .sub { color:#cdbbd8; font-size:13px; line-height:1.55; margin:0 0 23px; }
+  label { display:block; font-size:13px; font-weight:750; margin:17px 0 8px; }
+  input[type=text] { width:100%; padding:14px 15px; border:1px solid #71418a; background:#170820; border-radius:12px; color:white; outline:none; font:inherit; }
+  input[type=text]:focus { border-color:#e05aff; box-shadow:0 0 0 3px #d13cff22; }
+  .upload { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:15px; border:1.5px dashed #b34bd5; border-radius:13px; background:#2b0b3b; color:#fff; font-weight:750; cursor:pointer; text-align:center; }
+  .upload:hover { background:#3b1050; }
+  .upload input { display:none; }
+  .filename { color:#cdbbd8; font-size:12px; margin-top:8px; min-height:18px; overflow-wrap:anywhere; }
+  .actions { display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:24px; }
+  button { border:0; border-radius:12px; padding:14px 17px; font:inherit; font-weight:800; cursor:pointer; }
+  .download { color:white; background:linear-gradient(110deg,#8c00ed,#df28db); box-shadow:0 7px 24px #a000d955; }
+  .download:hover { filter:brightness(1.12); }
+  .reset { color:#f1dafa; background:#39164a; border:1px solid #713d87; }
+  .hint { margin:18px 0 0; font-size:12px; color:#bda9ca; line-height:1.55; }
+  @media(max-width:760px) { .shell{padding:24px 14px 40px}.layout{grid-template-columns:1fr;gap:16px}.panel{padding:20px}.preview-card{padding:9px} }
+</style>
+</head>
+<body>
+<main class="shell">
+  <header>
+    <div class="eyebrow">Mingle · Get-Together 2026</div>
+    <h1>Make your “I will be there” poster</h1>
+    <p>Add your photo, enter your name, and share your personalised poster.</p>
+  </header>
+  <section class="layout">
+    <div class="preview-card">
+      <div class="preview-wrap"><canvas id="poster" width="1248" height="1248" aria-label="Personalised Mingle event poster preview"></canvas></div>
+      <div class="preview-note">Your changes appear on the poster preview.</div>
+    </div>
+    <div class="panel">
+      <h2>Personalise your poster</h2>
+      <p class="sub">Upload a portrait to replace the blank photo space, then add the name you want displayed.</p>
+      <label for="photo">Your photo</label>
+      <label class="upload" for="photo"><span>＋</span> Choose a photo</label>
+      <input id="photo" type="file" accept="image/*" />
+      <div class="filename" id="filename">No photo selected yet</div>
+      <label for="name">Name</label>
+      <input id="name" type="text" maxlength="32" placeholder="Enter your name" autocomplete="name" />
+      <div class="actions">
+        <button class="download" id="download">Download poster PNG</button>
+        <button class="reset" id="reset" type="button">Reset</button>
+      </div>
+      <p class="hint">Tip: A clear, front-facing portrait works best. Your photo is processed in your browser and is not uploaded to a server.</p>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  const canvas = document.getElementById('poster');
+  const ctx = canvas.getContext('2d');
+  const photoInput = document.getElementById('photo');
+  const nameInput = document.getElementById('name');
+  const filename = document.getElementById('filename');
+  const template = new Image();
+  let uploadedPhoto = null;
+  let templateReady = false;
+
+  template.onload = () => { templateReady = true; render(); };
+  template.onerror = () => { ctx.fillStyle = '#21002f'; ctx.fillRect(0,0,1248,1248); ctx.fillStyle = '#fff'; ctx.fillText('Poster template could not be loaded.',40,60); };
+  template.src = 'poster-template.png';
+
+  function roundedRect(x,y,w,h,r) {
+    ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+  function drawCover(img,x,y,w,h) {
+    const scale = Math.max(w/img.width, h/img.height);
+    const sw = w/scale, sh = h/scale;
+    const sx = (img.width-sw)/2, sy = (img.height-sh)/2;
+    ctx.save(); roundedRect(x,y,w,h,42); ctx.clip(); ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h); ctx.restore();
+  }
+  function render() {
+    if (!templateReady) return;
+    ctx.clearRect(0,0,1248,1248);
+    ctx.drawImage(template,0,0,1248,1248);
+    // Photo aperture, aligned to the blank white panel in the supplied artwork.
+    if (uploadedPhoto) drawCover(uploadedPhoto,374,250,496,545);
+    // Cover the sample label text while preserving the original ribbon shape.
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 36px Arial, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const label = nameInput.value.trim() || 'Name';
+    let size = 36;
+    ctx.font = `800 ${size}px Arial, sans-serif`;
+    while (ctx.measureText(label).width > 220 && size > 18) { size -= 1; ctx.font = `800 ${size}px Arial, sans-serif`; }
+    ctx.fillText(label,1025,535,225);
+    ctx.restore();
+  }
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files && photoInput.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Please choose an image file.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => { uploadedPhoto = img; filename.textContent = file.name; render(); };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  nameInput.addEventListener('input', render);
+  document.getElementById('download').addEventListener('click', () => {
+    if (!templateReady) return;
+    const link = document.createElement('a');
+    link.download = (nameInput.value.trim().replace(/[^a-z0-9-_]+/gi,'-') || 'mingle-poster') + '.png';
+    link.href = canvas.toDataURL('image/png'); link.click();
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    uploadedPhoto = null; photoInput.value = ''; nameInput.value = ''; filename.textContent = 'No photo selected yet'; render();
+  });
+})();
+</script>
+</body>
+</html>
